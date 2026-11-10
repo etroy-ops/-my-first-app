@@ -3,824 +3,143 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#1d2b3a">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#15130f">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Road to Turkey</title>
-<style>
-  :root {
-    --ink: #14202c;
-    --paper: #fdf6e7;
-    --accent: #e4572e;
-    --gold: #f2b632;
-    --teal: #1f8a8a;
-  }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body {
-    margin: 0; height: 100%; overflow: hidden; background: #0e1620;
-    font-family: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    color: var(--ink);
-    overscroll-behavior: none; touch-action: none; user-select: none; -webkit-user-select: none;
-  }
-  #stage {
-    position: relative; height: 100%; max-width: 520px; margin: 0 auto; overflow: hidden;
-    background: #6f8aa0;
-  }
-  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-
-  /* HUD */
-  #hud {
-    position: absolute; left: 0; right: 0; top: 0; padding: calc(10px + env(safe-area-inset-top)) 12px 0;
-    pointer-events: none; display: none;
-  }
-  .meter {
-    background: rgba(20, 32, 44, .78); border-radius: 14px; padding: 7px 10px 9px; margin-bottom: 6px;
-    color: #fff; backdrop-filter: blur(4px);
-  }
-  .meter .row { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; font-weight: 700; }
-  .meter .row b { font-size: 16px; font-variant-numeric: tabular-nums; }
-  .bar { height: 9px; border-radius: 6px; background: rgba(255,255,255,.18); margin-top: 5px; overflow: hidden; }
-  .bar i { display: block; height: 100%; width: 0; border-radius: 6px; transition: width .15s linear; }
-  #moneyBar { background: linear-gradient(90deg, #f2b632, #ffe08a); }
-  #hairBar { background: linear-gradient(90deg, #7a4a21, #b9792f); }
-  #hairBar.low { background: linear-gradient(90deg, #c0392b, #e4572e); }
-  #chips { display: flex; gap: 6px; flex-wrap: wrap; }
-  .chip {
-    background: rgba(253, 246, 231, .94); border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 800;
-    font-variant-numeric: tabular-nums;
-  }
-  #btns { position: absolute; right: 12px; top: calc(118px + env(safe-area-inset-top)); display: none; gap: 8px; flex-direction: column; }
-  .iconbtn {
-    width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(20,32,44,.7); color: #fff;
-    font-size: 15px; font-weight: 800; font-family: inherit;
-  }
-
-  /* Screens */
-  .screen {
-    position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center;
-    padding: 20px 22px calc(20px + env(safe-area-inset-bottom)); text-align: center;
-    background: linear-gradient(180deg, rgba(20,32,44,.55), rgba(20,32,44,.86));
-    overflow-y: auto;
-  }
-  .screen.on { display: flex; }
-  .card {
-    background: var(--paper); border-radius: 22px; padding: 22px 20px 20px; width: 100%; max-width: 380px;
-    box-shadow: 0 14px 0 rgba(0,0,0,.22);
-  }
-  h1 { margin: 0; font-size: 34px; line-height: 1; letter-spacing: -.5px; }
-  h1 small { display: block; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
-  h2 { margin: 0 0 6px; font-size: 28px; line-height: 1.05; }
-  p { margin: 10px 0 0; font-size: 15px; line-height: 1.4; }
-  .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; text-align: left; }
-  .legend div { background: #fff; border-radius: 12px; padding: 8px 10px; font-size: 12px; line-height: 1.3; }
-  .legend b { display: block; font-size: 13px; }
-  .legend .bad { background: #fde3dc; }
-  .play {
-    margin-top: 16px; width: 100%; border: 0; border-radius: 16px; padding: 15px 10px; font-size: 20px; font-weight: 900;
-    font-family: inherit; color: #fff; background: var(--accent); box-shadow: 0 6px 0 #a83a1b;
-  }
-  .play:active { transform: translateY(4px); box-shadow: 0 2px 0 #a83a1b; }
-  .hint { font-size: 12px; opacity: .7; margin-top: 12px; }
-  .big { font-size: 42px; font-weight: 900; font-variant-numeric: tabular-nums; margin-top: 8px; }
-  .stats { display: flex; gap: 8px; margin-top: 12px; }
-  .stats div { flex: 1; background: #fff; border-radius: 12px; padding: 8px 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
-  .stats b { display: block; font-size: 18px; letter-spacing: 0; text-transform: none; }
-  .plane { font-size: 0; height: 64px; position: relative; overflow: hidden; margin: -4px 0 6px; }
-  .plane svg { position: absolute; top: 8px; left: -60px; width: 70px; animation: fly 2.6s ease-in-out infinite; }
-  @keyframes fly { 0% { left: -70px; top: 30px; } 100% { left: 105%; top: 0; } }
-</style>
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div id="stage">
-  <canvas id="c"></canvas>
+<div id="app">
+  <canvas id="cv"></canvas>
 
-  <div id="hud">
-    <div class="meter">
-      <div class="row"><span>Turkey trip fund</span><b id="moneyTxt">€0 / €3,000</b></div>
-      <div class="bar"><i id="moneyBar"></i></div>
-    </div>
-    <div class="meter">
-      <div class="row"><span>Hair</span><b id="hairTxt">70%</b></div>
-      <div class="bar"><i id="hairBar"></i></div>
-    </div>
-    <div id="chips"></div>
-  </div>
-  <div id="btns">
-    <button class="iconbtn" id="pauseBtn" aria-label="Pause">II</button>
-    <button class="iconbtn" id="muteBtn" aria-label="Toggle sound">♪</button>
-  </div>
-
-  <div class="screen on" id="startScreen">
-    <div class="card">
-      <h1><small>One man. Few hairs.</small>Road to Turkey</h1>
-      <p>Your hairline is leaving. Keep what's left alive long enough to save <b>€3,000</b> for the trip.</p>
-      <div class="legend">
-        <div><b>Finasteride</b>Stops shedding for 12s</div>
-        <div><b>Minoxidil</b>+20% hair</div>
-        <div><b>Hair fibers</b>+12% instant cover</div>
-        <div><b>Hat</b>Blocks rain &amp; humidity</div>
-        <div class="bad"><b>Wind</b>−14% (or steals your hat)</div>
-        <div class="bad"><b>Rain</b>−10% hair</div>
-        <div class="bad"><b>Humidity</b>−7% and frizz</div>
-        <div><b>Coins &amp; cash</b>€20 / €100</div>
+  <!-- In-game HUD -->
+  <div id="hud" hidden>
+    <div class="hudrow">
+      <div class="meters">
+        <div class="meter"><div class="mlabel"><span>Hair</span><b id="txtStage"></b></div><div class="bar"><i id="barHair"></i></div></div>
+        <div class="meter"><div class="mlabel"><span>Confidence</span><b id="txtConf"></b></div><div class="bar"><i id="barConf"></i></div></div>
+        <div class="meter"><div class="mlabel"><span>Turkey Fund</span><b id="txtFund"></b></div><div class="bar"><i id="barFund"></i></div></div>
       </div>
-      <button class="play" id="startBtn">Start walking</button>
-      <div class="hint">Swipe or tap left / right to change lane · ← → on keyboard</div>
-      <div class="hint" id="bestTxt"></div>
+      <div class="hudbtns">
+        <button class="hbtn" id="btnPause" aria-label="Pause">II</button>
+        <button class="hbtn" id="btnBag" aria-label="Open bag">BAG</button>
+        <button class="hbtn" id="btnMute" aria-label="Sound on or off">♪</button>
+      </div>
     </div>
+    <button id="missionBtn" aria-label="Show missions"><span id="missionNow"></span><em>▾</em></button>
+    <ul id="missionList" hidden></ul>
   </div>
 
-  <div class="screen" id="pauseScreen">
+  <div id="toasts" aria-live="polite"></div>
+  <button id="actBtn" hidden></button>
+
+  <!-- Dialogue box -->
+  <div id="dlg" hidden>
+    <div class="dlgtop">
+      <canvas id="dlgPortrait" width="96" height="96"></canvas>
+      <div class="dlgbody">
+        <div id="dlgName"></div>
+        <p id="dlgText"></p>
+      </div>
+    </div>
+    <div id="dlgChoices"></div>
+    <div id="dlgNext">tap to continue ▼</div>
+  </div>
+
+  <!-- Title -->
+  <section class="screen on" id="scrTitle">
+    <div class="titlewrap">
+      <div class="kicker">One man. Fewer hairs every day.</div>
+      <h1 class="logo">Road <span>to</span> Turkey</h1>
+      <div class="menu">
+        <button class="btn primary" id="btnPlay">Play</button>
+        <button class="btn" id="btnContinue" disabled>Continue</button>
+        <button class="btn" id="btnSettings">Settings</button>
+      </div>
+      <a class="minor" id="lnkRunner" href="runner.html">Bonus: Street Run arcade ›</a>
+    </div>
+  </section>
+
+  <!-- Settings -->
+  <section class="screen dim" id="scrSettings">
+    <div class="card">
+      <h2>Settings</h2>
+      <button class="toggle" id="setSound"><span>Sound</span><b></b></button>
+      <button class="toggle" id="setVibe"><span>Vibration</span><b></b></button>
+      <button class="toggle" id="setFast"><span>Instant text</span><b></b></button>
+      <button class="btn danger" id="btnReset">Delete saved progress</button>
+      <button class="btn primary" id="btnSetBack">Back</button>
+    </div>
+  </section>
+
+  <!-- Pause -->
+  <section class="screen dim" id="scrPause">
     <div class="card">
       <h2>Paused</h2>
-      <p>The wind is waiting.</p>
-      <button class="play" id="resumeBtn">Keep walking</button>
+      <p class="sub">Barry is standing very still, hoping nothing else falls out.</p>
+      <button class="btn primary" id="btnResume">Resume</button>
+      <button class="btn" id="btnPBag">Bag</button>
+      <button class="btn" id="btnRestart">Restart level</button>
+      <button class="btn" id="btnPSettings">Settings</button>
+      <button class="btn" id="btnQuit">Save &amp; quit to title</button>
     </div>
-  </div>
+  </section>
 
-  <div class="screen" id="overScreen">
+  <!-- Bag / inventory -->
+  <section class="screen dim" id="scrBag">
     <div class="card">
-      <h2 id="overTitle">Fully bald.</h2>
-      <p id="overMsg"></p>
-      <div class="big" id="overMoney">€0</div>
-      <div class="stats">
-        <div><b id="stDist">0 m</b>walked</div>
-        <div><b id="stItems">0</b>treatments</div>
-        <div><b id="stBest">€0</b>best</div>
-      </div>
-      <button class="play" id="againBtn">Try again</button>
+      <h2>Bag</h2>
+      <div id="bagCash"></div>
+      <div id="bagList"></div>
+      <button class="btn primary" id="btnBagBack">Close</button>
     </div>
-  </div>
+  </section>
 
-  <div class="screen" id="winScreen">
+  <!-- Defeat -->
+  <section class="screen dim" id="scrDefeat">
     <div class="card">
-      <div class="plane">
-        <svg viewBox="0 0 70 30"><path d="M2 18 L50 14 Q66 13 67 17 Q66 21 50 21 L30 21 L18 29 L13 29 L20 21 L8 21 L4 25 L1 25 Z" fill="#e4572e"/><path d="M30 14 L22 3 L27 3 L40 14 Z" fill="#a83a1b"/></svg>
-      </div>
-      <h2>Istanbul, booked!</h2>
-      <p id="winMsg"></p>
-      <div class="stats">
-        <div><b id="wTime">0s</b>time</div>
-        <div><b id="wHair">0%</b>hair left</div>
-        <div><b id="wBest">–</b>fastest</div>
-      </div>
-      <button class="play" id="winAgainBtn">Save up again</button>
+      <canvas class="bigface" id="defFace" width="150" height="150"></canvas>
+      <h2 id="defTitle"></h2>
+      <p class="sub" id="defMsg"></p>
+      <button class="btn primary" id="btnRetry">Try again</button>
+      <button class="btn" id="btnDefTitle">Title screen</button>
     </div>
-  </div>
+  </section>
+
+  <!-- Level complete -->
+  <section class="screen dim" id="scrDone">
+    <div class="card">
+      <canvas class="bigface" id="doneFace" width="150" height="150"></canvas>
+      <div class="kicker">Level 1 complete</div>
+      <h2>The Mirror Incident</h2>
+      <div class="stats">
+        <div><b id="dnFund"></b><span>Turkey Fund</span></div>
+        <div><b id="dnHair"></b><span>Hair</span></div>
+        <div><b id="dnConf"></b><span>Confidence</span></div>
+      </div>
+      <p class="sub" id="dnMsg"></p>
+      <p class="sub small">Level 2 arrives in Phase 2.</p>
+      <button class="btn primary" id="btnReplay">Replay level</button>
+      <button class="btn" id="btnDoneTitle">Title screen</button>
+    </div>
+  </section>
+
+  <!-- Yes / no confirmation -->
+  <section class="screen dim" id="scrConfirm">
+    <div class="card">
+      <p class="sub" id="cfMsg"></p>
+      <button class="btn danger" id="cfYes">Yes</button>
+      <button class="btn primary" id="cfNo">No, go back</button>
+    </div>
+  </section>
 </div>
 
-<script>
-(() => {
-'use strict';
-
-// ---------- Config ----------
-const GOAL = 3000;
-const F = 12;            // perspective focal distance
-const D_MAX = 70;        // spawn distance
-const ROW_GAP = 9;       // world units between rows
-const START_HAIR = 70;
-
-const ITEMS = {
-  coin: { money: 20 },
-  bill: { money: 100 },
-  fin:  { label: 'FINASTERIDE' },
-  minox:{ label: 'MINOXIDIL' },
-  fiber:{ label: 'FIBERS' },
-  hat:  { label: 'HAT' },
-  wind: { hazard: true, dmg: 14 },
-  rain: { hazard: true, dmg: 10 },
-  humid:{ hazard: true, dmg: 7 },
-};
-
-// ---------- DOM ----------
-const $ = id => document.getElementById(id);
-const stage = $('stage'), cv = $('c'), ctx = cv.getContext('2d');
-let W = 0, H = 0, DPR = 1, cx = 0, hz = 0, py = 0, laneW = 0, U = 0;
-
-function resize() {
-  DPR = Math.min(window.devicePixelRatio || 1, 2.5);
-  W = stage.clientWidth; H = stage.clientHeight;
-  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
-  cx = W / 2; hz = H * 0.3; py = H * 0.8;
-  laneW = Math.min(W * 0.27, 135);
-  U = laneW * 0.5;
-}
-window.addEventListener('resize', resize);
-resize();
-
-// ---------- Storage (best-effort) ----------
-const store = {
-  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
-};
-
-// ---------- Audio ----------
-let ac = null, muted = store.get('rtt_muted') === '1';
-function initAudio() {
-  if (ac || muted) return;
-  try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
-}
-function tone(freq, dur, type, vol, slide) {
-  if (muted || !ac) return;
-  const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
-  o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
-  if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
-  g.gain.setValueAtTime(vol || 0.08, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur);
-}
-const sfx = {
-  coin: () => { tone(880, .08, 'square', .04); setTimeout(() => tone(1320, .1, 'square', .04), 60); },
-  item: () => { tone(520, .1, 'triangle', .09); setTimeout(() => tone(780, .16, 'triangle', .09), 90); },
-  hit:  () => tone(220, .28, 'sawtooth', .08, 70),
-  move: () => tone(340, .05, 'sine', .03),
-  win:  () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, .22, 'triangle', .1), i * 130)),
-  lose: () => [392, 330, 262, 196].forEach((f, i) => setTimeout(() => tone(f, .25, 'sawtooth', .06), i * 170)),
-};
-function buzz(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} }
-
-// ---------- State ----------
-let state = 'start';   // start | play | pause | over | win
-let g = null;
-
-function newGame() {
-  g = {
-    t: 0, dist: 0, speed: 15, nextRow: 30,
-    lane: 0, x: 0,
-    hair: START_HAIR, money: 0, items: 0,
-    hatT: 0, finT: 0, invT: 0, frizzT: 0, shake: 0,
-    objs: [], pops: [], parts: [],
-    trailLane: 0, trailLeft: 0, sinceHelp: 0,
-    hudKey: '',
-  };
-}
-newGame();
-
-// ---------- Spawning ----------
-const rnd = (a, b) => a + Math.random() * (b - a);
-const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-function addObj(type, lane, d) { g.objs.push({ type, lane, d, seed: Math.random() * 10 }); }
-
-function spawnRow(d) {
-  const lanes = [-1, 0, 1];
-  const prog = Math.min(1, g.t / 90);
-  g.sinceHelp++;
-
-  if (g.trailLeft > 0) {           // continue a coin trail
-    addObj('coin', g.trailLane, d); g.trailLeft--;
-    if (Math.random() < 0.25 + prog * 0.3) addObj(pick(['wind', 'rain', 'humid']), pick(lanes.filter(l => l !== g.trailLane)), d);
-    return;
-  }
-
-  const needHelp = g.sinceHelp > 9 || (g.hair < 30 && g.sinceHelp > 4);
-  const r = Math.random();
-  if (needHelp || r < 0.13) {      // treatment row
-    const pool = g.hair < 35 ? ['minox', 'minox', 'fiber', 'fin', 'hat'] : ['minox', 'fiber', 'fin', 'hat', 'hat'];
-    const lane = pick(lanes);
-    addObj(pick(pool), lane, d);
-    if (Math.random() < prog * 0.6) addObj(pick(['wind', 'rain', 'humid']), pick(lanes.filter(l => l !== lane)), d);
-    g.sinceHelp = 0;
-  } else if (r < 0.58) {           // hazard row, always leaves a free lane
-    const n = Math.random() < 0.25 + prog * 0.45 ? 2 : 1;
-    const shuffled = lanes.slice().sort(() => Math.random() - 0.5);
-    const type = pick(['wind', 'rain', 'humid']);
-    for (let i = 0; i < n; i++) addObj(Math.random() < 0.7 ? type : pick(['wind', 'rain', 'humid']), shuffled[i], d);
-    for (let i = n; i < 3; i++) if (Math.random() < 0.5) addObj('coin', shuffled[i], d);
-  } else if (r < 0.9) {            // start coin trail
-    g.trailLane = pick(lanes); g.trailLeft = 2 + Math.floor(Math.random() * 3);
-    addObj('coin', g.trailLane, d);
-  } else {                         // cash, guarded by weather
-    const lane = pick(lanes);
-    addObj('bill', lane, d);
-    if (Math.random() < 0.6) addObj(pick(['wind', 'rain', 'humid']), pick(lanes.filter(l => l !== lane)), d);
-  }
-}
-
-// ---------- Gameplay ----------
-function pop(text, color) { g.pops.push({ text, color: color || '#fff', t: 0, x: g.x, off: g.pops.length * 0.25 }); }
-function strands(n, color) {
-  for (let i = 0; i < n; i++) g.parts.push({
-    x: 0, y: 0, vx: rnd(-1.6, 1.6), vy: rnd(-2.6, -0.6), rot: rnd(0, 6), t: 0, life: rnd(.6, 1.1), color: color || '#4a2f17',
-  });
-}
-
-function collect(o) {
-  const def = ITEMS[o.type];
-  if (def.hazard) {
-    if (g.invT > 0) return;
-    if (o.type === 'wind' && g.hatT > 0) {
-      g.hatT = 0; g.invT = 0.7; g.shake = 0.25;
-      pop('Hat blown away!', '#ffd9cf'); sfx.hit(); buzz(40);
-      g.parts.push({ hat: true, x: 0, y: 0, vx: rnd(1.5, 2.5) * (Math.random() < .5 ? -1 : 1), vy: -3, rot: 0, t: 0, life: 1.2 });
-      return;
-    }
-    if (g.hatT > 0) { pop('Hat saved you', '#c8f0e6'); g.invT = 0.5; sfx.move(); return; }
-    g.hair -= def.dmg; g.invT = 0.9; g.shake = 0.3;
-    if (o.type === 'humid') g.frizzT = 2.5;
-    pop({ wind: 'Wind! ', rain: 'Rain! ', humid: 'Humidity! ' }[o.type] + '−' + def.dmg + '%', '#ffb4a2');
-    strands(8); sfx.hit(); buzz(70);
-    return;
-  }
-  o.dead = true;
-  if (def.money) { g.money += def.money; pop('+€' + def.money, '#ffe08a'); sfx.coin(); return; }
-  g.items++; sfx.item(); buzz(15);
-  if (o.type === 'fin')   { g.finT = 12; g.hair += 4; pop('Finasteride: no shedding', '#bfe3ff'); }
-  if (o.type === 'minox') { g.hair += 20; pop('Minoxidil +20%', '#c9f5c0'); }
-  if (o.type === 'fiber') { g.hair += 12; pop('Fibers +12%', '#e6d2bd'); }
-  if (o.type === 'hat')   { g.hatT = 12; pop('Hat on', '#ffd0c4'); }
-  g.hair = Math.min(100, g.hair);
-}
-
-function move(dir) {
-  if (state !== 'play') return;
-  const n = Math.max(-1, Math.min(1, g.lane + dir));
-  if (n !== g.lane) { g.lane = n; sfx.move(); }
-}
-
-function update(dt) {
-  g.t += dt;
-  g.speed = Math.min(27, 15 + g.t * 0.1);
-  const step = g.speed * dt;
-  g.dist += step;
-
-  g.x += (g.lane - g.x) * Math.min(1, dt * 16);
-
-  g.nextRow -= step;
-  while (g.nextRow <= 0) { spawnRow(D_MAX + g.nextRow); g.nextRow += ROW_GAP; }
-
-  for (const o of g.objs) {
-    o.d -= step;
-    if (!o.hit && o.d < 0.9 && o.d > -0.9 && Math.abs(o.lane - g.x) < 0.5) {
-      if (!ITEMS[o.type].hazard || g.invT <= 0) o.hit = true;
-      collect(o);
-    }
-  }
-  g.objs = g.objs.filter(o => !o.dead && o.d > -6);
-
-  // natural balding
-  if (g.finT <= 0) g.hair -= (0.8 + Math.min(0.7, g.t * 0.007)) * dt;
-  g.hatT = Math.max(0, g.hatT - dt);
-  g.finT = Math.max(0, g.finT - dt);
-  g.invT = Math.max(0, g.invT - dt);
-  g.frizzT = Math.max(0, g.frizzT - dt);
-  g.shake = Math.max(0, g.shake - dt);
-
-  for (const p of g.pops) p.t += dt;
-  g.pops = g.pops.filter(p => p.t < 1.2);
-  for (const p of g.parts) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 5 * dt; p.rot += dt * 6; }
-  g.parts = g.parts.filter(p => p.t < p.life);
-
-  if (g.money >= GOAL) return finish(true);
-  if (g.hair <= 0) { g.hair = 0; return finish(false); }
-}
-
-function finish(won) {
-  const best = Math.max(+(store.get('rtt_best') || 0), Math.min(g.money, GOAL));
-  store.set('rtt_best', String(best));
-  syncHud(true);
-  $('hud').style.display = 'none'; $('btns').style.display = 'none';
-  if (won) {
-    state = 'win'; sfx.win(); buzz([40, 60, 40, 60, 120]);
-    const prev = +(store.get('rtt_fast') || 0);
-    const fast = prev ? Math.min(prev, g.t) : g.t;
-    store.set('rtt_fast', String(fast));
-    $('winMsg').textContent = `You saved €${GOAL.toLocaleString()} with ${Math.round(g.hair)}% of your hair still attached. The clinic is expecting you.`;
-    $('wTime').textContent = Math.round(g.t) + 's';
-    $('wHair').textContent = Math.round(g.hair) + '%';
-    $('wBest').textContent = Math.round(fast) + 's';
-    $('winScreen').classList.add('on');
-  } else {
-    state = 'over'; sfx.lose(); buzz(200);
-    const left = GOAL - g.money;
-    $('overMsg').textContent = `The weather won. You were €${left.toLocaleString()} short of the Turkey trip.`;
-    $('overMoney').textContent = '€' + g.money.toLocaleString();
-    $('stDist').textContent = Math.round(g.dist * 0.6) + ' m';
-    $('stItems').textContent = g.items;
-    $('stBest').textContent = '€' + best.toLocaleString();
-    $('overScreen').classList.add('on');
-  }
-}
-
-// ---------- HUD ----------
-function syncHud(force) {
-  const key = [g.money, Math.ceil(g.hair), Math.ceil(g.hatT), Math.ceil(g.finT)].join('|');
-  if (!force && key === g.hudKey) return;
-  g.hudKey = key;
-  $('moneyTxt').textContent = `€${g.money.toLocaleString()} / €${GOAL.toLocaleString()}`;
-  $('moneyBar').style.width = Math.min(100, g.money / GOAL * 100) + '%';
-  $('hairTxt').textContent = Math.ceil(g.hair) + '%';
-  $('hairBar').style.width = Math.max(0, g.hair) + '%';
-  $('hairBar').classList.toggle('low', g.hair < 25);
-  let chips = '';
-  if (g.hatT > 0) chips += `<span class="chip">Hat ${Math.ceil(g.hatT)}s</span>`;
-  if (g.finT > 0) chips += `<span class="chip">Finasteride ${Math.ceil(g.finT)}s</span>`;
-  $('chips').innerHTML = chips;
-}
-
-// ---------- Rendering ----------
-function proj(lane, d) {
-  const s = F / (F + d);
-  return { x: cx + lane * laneW * s, y: hz + (py - hz) * s, s };
-}
-function rr(x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
-}
-function quad(l1, l2, d1, d2, fill) {
-  const a = proj(l1, d1), b = proj(l2, d1), c = proj(l2, d2), e = proj(l1, d2);
-  ctx.fillStyle = fill; ctx.beginPath();
-  ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(e.x, e.y); ctx.closePath(); ctx.fill();
-}
-
-function drawWorld(time) {
-  // sky
-  let gr = ctx.createLinearGradient(0, 0, 0, hz);
-  gr.addColorStop(0, '#51697f'); gr.addColorStop(1, '#b9c6cf');
-  ctx.fillStyle = gr; ctx.fillRect(0, 0, W, hz + 2);
-
-  // drifting clouds
-  ctx.fillStyle = 'rgba(255,255,255,.35)';
-  for (let i = 0; i < 4; i++) {
-    const x = ((i * 190 + time * (6 + i * 2)) % (W + 200)) - 100, y = hz * (0.42 + 0.13 * i);
-    ctx.beginPath(); ctx.ellipse(x, y, 54, 13, 0, 0, 7); ctx.ellipse(x + 30, y - 9, 34, 13, 0, 0, 7); ctx.fill();
-  }
-
-  // skyline
-  ctx.fillStyle = '#7d8f9d';
-  for (let i = 0; i < 14; i++) {
-    const bw = W / 13, bh = 14 + ((i * 37) % 30);
-    ctx.fillRect(i * bw - 4, hz - bh, bw - 3, bh + 1);
-  }
-
-  // ground
-  gr = ctx.createLinearGradient(0, hz, 0, H);
-  gr.addColorStop(0, '#8d9b84'); gr.addColorStop(1, '#5f7a55');
-  ctx.fillStyle = gr; ctx.fillRect(0, hz, W, H - hz);
-
-  // pavement + road
-  quad(-2.1, 2.1, 600, -9, '#b3aca0');
-  quad(-1.5, 1.5, 600, -9, '#4a515a');
-  quad(-1.56, -1.5, 600, -9, '#e9e2d0');
-  quad(1.5, 1.56, 600, -9, '#e9e2d0');
-
-  // lane dashes
-  const off = g.dist % 6;
-  for (let d = -6 - off; d < 150; d += 6) {
-    if (d + 3 < -8) continue;
-    quad(-0.53, -0.47, d + 3, Math.max(d, -8), 'rgba(255,255,255,.55)');
-    quad(0.47, 0.53, d + 3, Math.max(d, -8), 'rgba(255,255,255,.55)');
-  }
-
-  // roadside lamp posts
-  const off2 = g.dist % 14;
-  for (let d = 126 - off2; d > -7; d -= 14) {
-    for (const side of [-1, 1]) {
-      const p = proj(side * 2.0, d), h = U * 3.6 * p.s;
-      ctx.globalAlpha = Math.min(1, (140 - d) / 40);
-      ctx.strokeStyle = '#2f3a45'; ctx.lineWidth = Math.max(1, U * 0.09 * p.s); ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y - h); ctx.lineTo(p.x - side * U * 0.6 * p.s, p.y - h); ctx.stroke();
-      ctx.fillStyle = '#ffe9a8';
-      ctx.beginPath(); ctx.arc(p.x - side * U * 0.6 * p.s, p.y - h + U * 0.12 * p.s, U * 0.13 * p.s, 0, 7); ctx.fill();
-    }
-  }
-  ctx.globalAlpha = 1;
-}
-
-function shadow(p, w) {
-  ctx.fillStyle = 'rgba(0,0,0,.25)';
-  ctx.beginPath(); ctx.ellipse(p.x, p.y, w * p.s, w * 0.3 * p.s, 0, 0, 7); ctx.fill();
-}
-function label(text, x, y, s) {
-  const fs = Math.max(7, U * 0.22 * s);
-  ctx.font = `800 ${fs}px ui-rounded, system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  const w = ctx.measureText(text).width + fs;
-  ctx.fillStyle = 'rgba(20,32,44,.8)'; rr(x - w / 2, y - fs * 0.8, w, fs * 1.6, fs * 0.8); ctx.fill();
-  ctx.fillStyle = '#fff'; ctx.fillText(text, x, y + fs * 0.05);
-}
-
-function drawObj(o, time) {
-  const p = proj(o.lane, o.d), s = p.s, u = U * s;
-  ctx.globalAlpha = Math.min(1, (D_MAX - o.d) / 12) * (o.hit && ITEMS[o.type].hazard ? 0.45 : 1);
-  const bob = Math.sin(time * 4 + o.seed) * u * 0.08;
-  const x = p.x, y = p.y - u * 0.75 + bob;   // item centre
-
-  switch (o.type) {
-    case 'coin': {
-      shadow(p, U * 0.3);
-      const sq = Math.abs(Math.cos(time * 3 + o.seed));
-      ctx.fillStyle = '#c98f14'; ctx.beginPath(); ctx.ellipse(x, y, u * 0.34 * (0.25 + 0.75 * sq), u * 0.34, 0, 0, 7); ctx.fill();
-      ctx.fillStyle = '#f7c948'; ctx.beginPath(); ctx.ellipse(x, y, u * 0.27 * (0.25 + 0.75 * sq), u * 0.27, 0, 0, 7); ctx.fill();
-      if (sq > 0.5) {
-        ctx.fillStyle = '#a06d06'; ctx.font = `900 ${u * 0.36}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText('€', x, y + u * 0.02);
-      }
-      break;
-    }
-    case 'bill': {
-      shadow(p, U * 0.45);
-      ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(time * 2 + o.seed) * 0.15);
-      ctx.fillStyle = '#2e8b57'; rr(-u * 0.55, -u * 0.3, u * 1.1, u * 0.6, u * 0.07); ctx.fill();
-      ctx.strokeStyle = '#bfe8cf'; ctx.lineWidth = u * 0.04; rr(-u * 0.47, -u * 0.22, u * 0.94, u * 0.44, u * 0.04); ctx.stroke();
-      ctx.fillStyle = '#eafff1'; ctx.font = `900 ${u * 0.3}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('€100', 0, u * 0.02);
-      ctx.restore();
-      break;
-    }
-    case 'fin': {
-      shadow(p, U * 0.4);
-      ctx.save(); ctx.translate(x, y); ctx.rotate(-0.6);
-      const w = u * 0.95, h = u * 0.42;
-      ctx.fillStyle = '#f4f7fb'; rr(-w / 2, -h / 2, w, h, h / 2); ctx.fill();
-      ctx.save(); ctx.beginPath(); ctx.rect(0, -h, w, h * 2); ctx.clip();
-      ctx.fillStyle = '#3d7fd9'; rr(-w / 2, -h / 2, w, h, h / 2); ctx.fill(); ctx.restore();
-      ctx.fillStyle = 'rgba(255,255,255,.6)'; rr(-w * 0.36, -h * 0.32, w * 0.5, h * 0.16, h * 0.08); ctx.fill();
-      ctx.restore();
-      label(ITEMS.fin.label, x, y - u * 0.62, s);
-      break;
-    }
-    case 'minox': {
-      shadow(p, U * 0.35);
-      ctx.fillStyle = '#7b4a25'; rr(x - u * 0.3, y - u * 0.25, u * 0.6, u * 0.75, u * 0.1); ctx.fill();
-      ctx.fillStyle = '#f6efe0'; ctx.fillRect(x - u * 0.3, y - u * 0.05, u * 0.6, u * 0.32);
-      ctx.fillStyle = '#7b4a25'; ctx.font = `900 ${u * 0.2}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('5%', x, y + u * 0.12);
-      ctx.fillStyle = '#222'; rr(x - u * 0.13, y - u * 0.5, u * 0.26, u * 0.27, u * 0.04); ctx.fill();
-      ctx.fillStyle = '#c0392b'; ctx.beginPath(); ctx.ellipse(x, y - u * 0.6, u * 0.11, u * 0.15, 0, 0, 7); ctx.fill();
-      label(ITEMS.minox.label, x, y - u * 0.98, s);
-      break;
-    }
-    case 'fiber': {
-      shadow(p, U * 0.35);
-      ctx.fillStyle = '#1c1c1f'; rr(x - u * 0.27, y - u * 0.3, u * 0.54, u * 0.8, u * 0.08); ctx.fill();
-      ctx.fillStyle = '#d9b36c'; ctx.fillRect(x - u * 0.27, y - u * 0.02, u * 0.54, u * 0.2);
-      ctx.fillStyle = '#3a3a40'; rr(x - u * 0.27, y - u * 0.44, u * 0.54, u * 0.18, u * 0.06); ctx.fill();
-      ctx.fillStyle = '#4a2f17';
-      for (let i = 0; i < 6; i++) {
-        const a = time * 2 + i * 1.1 + o.seed;
-        ctx.fillRect(x + Math.sin(a) * u * 0.3, y - u * 0.55 - ((a * 0.2) % 1) * u * 0.3, u * 0.05, u * 0.05);
-      }
-      label(ITEMS.fiber.label, x, y - u * 1.0, s);
-      break;
-    }
-    case 'hat': {
-      shadow(p, U * 0.45);
-      drawCap(x, y + u * 0.1, u * 0.5);
-      label(ITEMS.hat.label, x, y - u * 0.62, s);
-      break;
-    }
-    case 'rain': {
-      ctx.fillStyle = 'rgba(70,110,160,.35)';
-      ctx.beginPath(); ctx.ellipse(p.x, p.y, u * 0.85, u * 0.22, 0, 0, 7); ctx.fill();
-      const top = p.y - u * 3.1;
-      ctx.strokeStyle = 'rgba(190,220,255,.85)'; ctx.lineWidth = Math.max(1, u * 0.045); ctx.lineCap = 'round';
-      ctx.beginPath();
-      for (let i = 0; i < 9; i++) {
-        const rx = p.x + (i - 4) * u * 0.19, ph = (time * 2.4 + i * 0.37 + o.seed) % 1;
-        const ry = top + u * 0.3 + ph * u * 2.6;
-        ctx.moveTo(rx, ry); ctx.lineTo(rx - u * 0.05, ry + u * 0.3);
-      }
-      ctx.stroke();
-      ctx.fillStyle = '#3b4756';
-      ctx.beginPath();
-      ctx.ellipse(p.x - u * 0.45, top, u * 0.5, u * 0.34, 0, 0, 7);
-      ctx.ellipse(p.x + u * 0.4, top + u * 0.02, u * 0.55, u * 0.36, 0, 0, 7);
-      ctx.ellipse(p.x, top - u * 0.22, u * 0.55, u * 0.42, 0, 0, 7);
-      ctx.fill();
-      ctx.fillStyle = '#566477';
-      ctx.beginPath(); ctx.ellipse(p.x - u * 0.1, top - u * 0.32, u * 0.34, u * 0.2, 0, 0, 7); ctx.fill();
-      break;
-    }
-    case 'wind': {
-      const cy0 = p.y - u * 1.1;
-      ctx.fillStyle = 'rgba(255,255,255,.14)';
-      ctx.beginPath(); ctx.ellipse(p.x, cy0, u * 0.9, u * 1.1, 0, 0, 7); ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,.92)'; ctx.lineWidth = Math.max(1.2, u * 0.09); ctx.lineCap = 'round';
-      for (let i = 0; i < 3; i++) {
-        const yy = cy0 + (i - 1) * u * 0.6, ph = Math.sin(time * 6 + i * 2 + o.seed) * u * 0.25;
-        const dir = i % 2 ? -1 : 1;
-        ctx.beginPath();
-        ctx.moveTo(p.x - dir * u * 0.8 + ph, yy);
-        ctx.lineTo(p.x + dir * u * 0.35 + ph, yy);
-        ctx.arc(p.x + dir * u * 0.35 + ph, yy - u * 0.2, u * 0.2, Math.PI / 2, dir > 0 ? -Math.PI * 0.9 : Math.PI * 1.9, dir > 0);
-        ctx.stroke();
-      }
-      // leaf
-      const la = time * 5 + o.seed;
-      ctx.save(); ctx.translate(p.x + Math.cos(la) * u * 0.7, cy0 + Math.sin(la * 1.3) * u * 0.7); ctx.rotate(la);
-      ctx.fillStyle = '#c9772b'; ctx.beginPath(); ctx.ellipse(0, 0, u * 0.16, u * 0.07, 0, 0, 7); ctx.fill(); ctx.restore();
-      break;
-    }
-    case 'humid': {
-      const cy0 = p.y - u * 0.9;
-      for (let i = 0; i < 5; i++) {
-        const a = time * 0.9 + i * 1.3 + o.seed;
-        ctx.fillStyle = i % 2 ? 'rgba(214,236,196,.42)' : 'rgba(236,246,214,.36)';
-        ctx.beginPath();
-        ctx.ellipse(p.x + Math.cos(a) * u * 0.35, cy0 + Math.sin(a * 1.4) * u * 0.3 + (i - 2) * u * 0.22, u * 0.7, u * 0.5, 0, 0, 7);
-        ctx.fill();
-      }
-      ctx.fillStyle = 'rgba(120,190,215,.95)';
-      for (let i = 0; i < 4; i++) {
-        const dx = p.x + (i - 1.5) * u * 0.36, dy = cy0 + Math.sin(time * 3 + i * 1.7 + o.seed) * u * 0.4;
-        ctx.beginPath(); ctx.moveTo(dx, dy - u * 0.17); ctx.quadraticCurveTo(dx + u * 0.13, dy + u * 0.04, dx, dy + u * 0.1);
-        ctx.quadraticCurveTo(dx - u * 0.13, dy + u * 0.04, dx, dy - u * 0.17); ctx.fill();
-      }
-      break;
-    }
-  }
-  ctx.globalAlpha = 1;
-}
-
-function drawCap(x, y, r) {
-  ctx.fillStyle = '#a83a1b';
-  ctx.beginPath(); ctx.ellipse(x, y + r * 0.02, r * 1.25, r * 0.3, 0, 0, 7); ctx.fill();
-  ctx.fillStyle = '#e4572e';
-  ctx.beginPath(); ctx.arc(x, y, r, Math.PI, 0); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = '#a83a1b'; ctx.lineWidth = r * 0.07;
-  ctx.beginPath(); ctx.moveTo(x, y - r); ctx.lineTo(x, y); ctx.stroke();
-  ctx.fillStyle = '#fdf6e7'; ctx.beginPath(); ctx.arc(x, y - r, r * 0.12, 0, 7); ctx.fill();
-}
-
-function drawPlayer(time) {
-  const p = proj(g.x, 0), u = U;
-  const walk = state === 'play' ? time * (6 + g.speed * 0.25) : 0;
-  const sw = Math.sin(walk);
-  const lean = (g.lane - g.x) * 0.25;
-  const flash = g.invT > 0 && Math.floor(time * 16) % 2 === 0;
-
-  shadow(p, u * 0.6);
-  ctx.save();
-  ctx.translate(p.x, p.y);
-  ctx.rotate(lean);
-  if (flash) ctx.globalAlpha = 0.45;
-
-  // legs
-  for (const side of [-1, 1]) {
-    const lift = Math.max(0, sw * side) * u * 0.22;
-    ctx.fillStyle = '#2b3a55'; rr(side * u * 0.24 - u * 0.15, -u * 0.85 - lift, u * 0.3, u * 0.75, u * 0.1); ctx.fill();
-    ctx.fillStyle = '#1b1b1f'; rr(side * u * 0.24 - u * 0.17, -u * 0.16 - lift, u * 0.34, u * 0.16, u * 0.07); ctx.fill();
-  }
-  // arms
-  for (const side of [-1, 1]) {
-    ctx.save(); ctx.translate(side * u * 0.5, -u * 1.55); ctx.rotate(side * 0.12 + sw * side * 0.35);
-    ctx.fillStyle = '#17706f'; rr(-u * 0.12, 0, u * 0.24, u * 0.68, u * 0.11); ctx.fill();
-    ctx.fillStyle = '#e8b990'; ctx.beginPath(); ctx.arc(0, u * 0.7, u * 0.11, 0, 7); ctx.fill();
-    ctx.restore();
-  }
-  // torso
-  ctx.fillStyle = '#1f8a8a'; rr(-u * 0.48, -u * 1.68, u * 0.96, u * 0.98, u * 0.22); ctx.fill();
-  ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(-u * 0.02, -u * 1.6, u * 0.04, u * 0.85);
-
-  // head (seen from behind)
-  const hy = -u * 2.02 + Math.abs(sw) * u * 0.03, r = u * 0.37;
-  ctx.fillStyle = '#e8b990'; rr(-u * 0.11, hy + r * 0.6, u * 0.22, u * 0.3, u * 0.05); ctx.fill();
-  ctx.beginPath(); ctx.arc(-r * 0.98, hy + r * 0.1, r * 0.2, 0, 7); ctx.arc(r * 0.98, hy + r * 0.1, r * 0.2, 0, 7); ctx.fill();
-
-  const bald = 1 - Math.max(0, Math.min(100, g.hair)) / 100;
-  ctx.fillStyle = '#4a2f17'; ctx.beginPath(); ctx.arc(0, hy, r, 0, 7); ctx.fill();
-  // frizz spikes
-  if (g.frizzT > 0 && bald < 0.95) {
-    ctx.strokeStyle = '#4a2f17'; ctx.lineWidth = u * 0.045; ctx.lineCap = 'round'; ctx.beginPath();
-    for (let i = 0; i < 12; i++) {
-      const a = Math.PI * (0.05 + i * 0.082) + Math.sin(time * 20 + i) * 0.05, rr2 = r * (1.22 + (i % 2) * 0.12);
-      ctx.moveTo(Math.cos(a) * r * 0.95, hy + Math.sin(a) * r * 0.95);
-      ctx.lineTo(Math.cos(a) * rr2, hy + Math.sin(a) * rr2);
-      const b = -a * 0.5 - 0.3;
-      ctx.moveTo(Math.cos(b) * r * 0.95, hy + Math.sin(b) * r * 0.95);
-      ctx.lineTo(Math.cos(b) * rr2, hy + Math.sin(b) * rr2);
-    }
-    ctx.stroke();
-  }
-  // the bald spot grows from the crown
-  ctx.save(); ctx.beginPath(); ctx.arc(0, hy, r, 0, 7); ctx.clip();
-  ctx.fillStyle = '#e8b990';
-  ctx.beginPath(); ctx.ellipse(0, hy - r * 0.42, r * (0.3 + 0.95 * bald), r * (0.24 + 1.25 * bald), 0, 0, 7); ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,.5)';
-  ctx.beginPath(); ctx.ellipse(-r * 0.12, hy - r * 0.55, r * (0.1 + 0.2 * bald), r * (0.06 + 0.1 * bald), -0.4, 0, 7); ctx.fill();
-  ctx.restore();
-
-  if (g.hatT > 0 && !(g.hatT < 3 && Math.floor(time * 6) % 2 === 0)) drawCap(0, hy - r * 0.05, r * 1.08);
-  if (g.finT > 0) {   // protective ring
-    ctx.strokeStyle = `rgba(120,180,255,${0.5 + 0.3 * Math.sin(time * 6)})`; ctx.lineWidth = u * 0.06;
-    ctx.beginPath(); ctx.arc(0, hy, r * 1.45, 0, 7); ctx.stroke();
-  }
-
-  // particles (relative to head)
-  for (const q of g.parts) {
-    ctx.globalAlpha = 1 - q.t / q.life;
-    ctx.save(); ctx.translate(q.x * u, hy + q.y * u); ctx.rotate(q.rot);
-    if (q.hat) drawCap(0, 0, r);
-    else { ctx.strokeStyle = q.color; ctx.lineWidth = u * 0.04; ctx.beginPath(); ctx.moveTo(-u * 0.1, 0); ctx.quadraticCurveTo(0, -u * 0.08, u * 0.1, 0); ctx.stroke(); }
-    ctx.restore();
-  }
-  ctx.restore();
-  ctx.globalAlpha = 1;
-
-  // popups
-  for (const q of g.pops) {
-    const a = 1 - Math.max(0, (q.t - 0.7) / 0.5);
-    ctx.globalAlpha = a;
-    ctx.font = `900 ${Math.max(15, U * 0.34)}px ui-rounded, system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    const tx = Math.max(90, Math.min(W - 90, p.x)), ty = p.y - U * 2.9 - q.t * U * 1.1 - q.off * U;
-    ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(20,32,44,.85)'; ctx.lineJoin = 'round';
-    ctx.strokeText(q.text, tx, ty); ctx.fillStyle = q.color; ctx.fillText(q.text, tx, ty);
-  }
-  ctx.globalAlpha = 1;
-}
-
-function render(time) {
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  ctx.clearRect(0, 0, W, H);
-  ctx.save();
-  if (g.shake > 0) ctx.translate(rnd(-1, 1) * g.shake * 22, rnd(-1, 1) * g.shake * 14);
-  drawWorld(time);
-  const sorted = g.objs.slice().sort((a, b) => b.d - a.d);
-  let drawn = false;
-  for (const o of sorted) {
-    if (!drawn && o.d < 0) { drawPlayer(time); drawn = true; }
-    drawObj(o, time);
-  }
-  if (!drawn) drawPlayer(time);
-  ctx.restore();
-
-  // low-hair vignette
-  if (state === 'play' && g.hair < 25) {
-    const a = (1 - g.hair / 25) * (0.3 + 0.12 * Math.sin(time * 7));
-    const v = ctx.createRadialGradient(cx, H / 2, H * 0.3, cx, H / 2, H * 0.75);
-    v.addColorStop(0, 'rgba(200,40,20,0)'); v.addColorStop(1, `rgba(200,40,20,${a})`);
-    ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
-  }
-}
-
-// ---------- Loop ----------
-let last = 0;
-function frame(ts) {
-  const time = ts / 1000;
-  const dt = Math.min(0.05, time - last || 0);
-  last = time;
-  if (state === 'play') { update(dt); if (state === 'play') syncHud(); }
-  render(time);
-  requestAnimationFrame(frame);
-}
-requestAnimationFrame(frame);
-
-// ---------- Flow ----------
-function start() {
-  initAudio(); if (ac && ac.state === 'suspended') ac.resume();
-  newGame();
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
-  $('hud').style.display = 'block'; $('btns').style.display = 'flex';
-  state = 'play'; syncHud(true);
-}
-function pause() {
-  if (state !== 'play') return;
-  state = 'pause'; $('pauseScreen').classList.add('on');
-}
-function resume() {
-  if (state !== 'pause') return;
-  $('pauseScreen').classList.remove('on'); state = 'play';
-}
-$('startBtn').onclick = start; $('againBtn').onclick = start; $('winAgainBtn').onclick = start;
-$('resumeBtn').onclick = resume;
-$('pauseBtn').onclick = e => { e.stopPropagation(); pause(); };
-function paintMute() { $('muteBtn').style.opacity = muted ? 0.45 : 1; }
-$('muteBtn').onclick = e => {
-  e.stopPropagation(); muted = !muted; store.set('rtt_muted', muted ? '1' : '0'); paintMute(); initAudio();
-};
-paintMute();
-document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
-
-const best0 = +(store.get('rtt_best') || 0);
-if (best0) $('bestTxt').textContent = `Best savings so far: €${best0.toLocaleString()}`;
-
-// ---------- Input ----------
-let pd = null;
-cv.addEventListener('pointerdown', e => { pd = { x: e.clientX, fired: false }; });
-cv.addEventListener('pointermove', e => {
-  if (!pd || pd.fired) return;
-  const dx = e.clientX - pd.x;
-  if (Math.abs(dx) > 22) { move(dx > 0 ? 1 : -1); pd.fired = true; }
-});
-function up(e) {
-  if (pd && !pd.fired) {
-    const r = stage.getBoundingClientRect();
-    move(e.clientX - r.left > r.width / 2 ? 1 : -1);
-  }
-  pd = null;
-}
-cv.addEventListener('pointerup', up);
-cv.addEventListener('pointercancel', () => { pd = null; });
-window.addEventListener('keydown', e => {
-  if (e.key === 'ArrowLeft' || e.key === 'a') move(-1);
-  else if (e.key === 'ArrowRight' || e.key === 'd') move(1);
-  else if (e.key === 'Escape' || e.key === 'p') state === 'pause' ? resume() : pause();
-  else if ((e.key === ' ' || e.key === 'Enter') && state !== 'play') { e.preventDefault(); state === 'pause' ? resume() : start(); }
-});
-document.addEventListener('contextmenu', e => e.preventDefault());
-
-// test hook
-window.__game = { get g() { return g; }, get state() { return state; }, move };
-})();
-</script>
+<script src="js/core.js"></script>
+<script src="js/art.js"></script>
+<script src="js/level1.js"></script>
+<script src="js/dialogue.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/game.js"></script>
 </body>
 </html>
