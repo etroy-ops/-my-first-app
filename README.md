@@ -1,17 +1,38 @@
 # Road to Turkey
 
-A mobile browser game. You are a balding man walking forward through hostile weather,
-trying to keep your remaining hair alive long enough to save €3,000 for a trip to Turkey.
+A dark, hand-drawn-style mobile comedy adventure. Barry Thinley, 35, is going bald and
+needs €3,000 for a hair transplant in Istanbul.
 
-- **Avoid:** wind (−14% hair, or it steals your hat), rain (−10%), humidity (−7% and frizz)
-- **Pick up:** finasteride (stops shedding for 12s), minoxidil (+20%), hair fibers (+12%),
-  hats (block rain and humidity for 12s), coins (€20) and cash (€100)
-- **Win:** reach €3,000. **Lose:** hair hits 0%.
+**Phase 1** contains the title screen and Level 1, *The Mirror Incident*: explore Barry's
+flat, face the bathroom mirror, scrape together cash, and make it to the pharmacy.
 
 ## Play
 
-Open `index.html` in any browser — no build step or dependencies. Swipe or tap the
-left/right side of the screen to change lane (arrow keys on desktop).
+Open `index.html` in a browser. There is nothing to install or build.
+It is designed for a phone held upright (Chrome on Android).
 
-To play on a phone, serve the folder (`python3 -m http.server`) and open it over your
-local network, or enable GitHub Pages for the repository.
+- **Move:** drag anywhere on the game area (a joystick appears under your thumb)
+- **Interact:** the round button, bottom right (LOOK / SEARCH / TALK / OPEN)
+- **Top bar:** Hair, Confidence and Turkey Fund meters, pause, bag, sound
+- **Yellow strip:** your current mission — tap it for the full list
+- Progress saves automatically on your device. *Continue* on the title screen resumes it.
+- Desktop: arrow keys / WASD to move, Space or E to interact, Esc to pause.
+
+The original lane-runner is still here as a bonus: `runner.html` ("Street Run").
+
+## Files
+
+| File | What it does |
+| --- | --- |
+| `index.html` | The page: canvas, HUD, dialogue box, menus |
+| `css/style.css` | All styling |
+| `js/core.js` | Helpers, saving to the browser, settings, sound |
+| `js/art.js` | All artwork, drawn in code (characters, hair stages, props, map) |
+| `js/level1.js` | Level 1 data: map, objects, dialogue, items, missions |
+| `js/dialogue.js` | Dialogue box with branching choices |
+| `js/ui.js` | Menus, meters, mission tracker, bag |
+| `js/game.js` | Movement, collision, camera, saving, drawing, touch input |
+| `runner.html` | The original Street Run arcade game |
+| `tests/` | Automated checks (see `tests/README.md`) |
+
+No frameworks, no build step, no external services or keys. Works on GitHub Pages as-is.
